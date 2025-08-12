@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.doubledowninteractive.news.keyword.repository.KeywordMapper">
+
+    <resultMap id="KeywordMap" type="com.doubledowninteractive.news.keyword.domain.Keyword">
+        <id property="id" column="id"/>
+        <result property="word" column="word"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="KeywordMap">
+        SELECT * FROM keywords ORDER BY id DESC
+    </select>
+
+    <select id="findAllEnabled" resultMap="KeywordMap">
+        SELECT * FROM keywords WHERE enabled = 1 ORDER BY id ASC
+    </select>
+
+    <!-- 🔹 중복 확인 -->
+    <select id="findByWord" parameterType="string" resultMap="KeywordMap">
+        SELECT * FROM keywords WHERE word = #{word}
+    </select>
+
+    <!-- 🔹 일반 INSERT -->
+    <insert id="insert">
+        INSERT INTO keywords(word, enabled) VALUES(#{word}, 1)
+    </insert>
+
+    <update id="updateEnabled">
+        UPDATE keywords SET enabled = #{enabled} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM keywords WHERE id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,89 @@
+/* ===== Reset & Tokens ===== */
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; }
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Arial, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+}
+
+:root {
+    --bg: #f7f8fa;
+    --fg: #1f2937;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-contrast: #ffffff;
+    --link: #2563eb;
+    --link-hover: #1d4ed8;
+}
+
+/* ===== Layout ===== */
+.container { max-width: 1080px; margin: 24px auto; padding: 0 16px; }
+
+/* ===== Top Nav ===== */
+.nav {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+}
+.nav .brand { font-weight: 700; text-decoration: none; color: var(--fg); margin-right: 8px; }
+.nav .link { text-decoration: none; color: var(--fg); opacity: .9; padding: 6px 8px; border-radius: 8px; }
+.nav .link:hover { background: #f3f4f6; }
+.nav .spacer { flex: 1; }
+.muted { color: var(--muted); }
+
+/* ===== Cards ===== */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 36px; padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff; color: var(--fg);
+    cursor: pointer;
+}
+.btn:hover { background: #f9fafb; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-contrast);
+}
+.btn.primary:hover { filter: brightness(.98); }
+
+/* ===== Inputs ===== */
+.input {
+    height: 36px; padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff; color: var(--fg);
+}
+.input:focus { outline: 2px solid rgba(37,99,235,.25); }
+
+/* ===== Table ===== */
+.table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+.table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.table thead th { background: #f3f4f6; font-weight: 600; }
+.table tr:last-child td { border-bottom: none; }
+
+/* ===== Misc ===== */
+.link { color: var(--link); text-decoration: none; }
+.link:hover { color: var(--link-hover); text-decoration: underline; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+.mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; }
+
+/* highlight for search */
+mark { background: #fde68a; padding: 0 2px; border-radius: 3px; }

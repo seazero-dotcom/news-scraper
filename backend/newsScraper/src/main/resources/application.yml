@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: news-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/news?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: news
+    password: news
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+            scope: [ openid, profile, email ]
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+
+mybatis:
+  mapper-locations: classpath:mybatis/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  frontend:
+    base-url: http://localhost:5173
+  jwt:
+    secret: ${JWT_SECRET:change-this-demo-secret-32bytes-min-change-this-demo-secret}
+    expMinutes: 120
+
+logging:
+  level:
+    root: INFO
+    com.doubledowninteractive.news: DEBUG     # ✅ 우리 패키지 전부 디버그
+    org.springframework.web: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.client: DEBUG
