@@ -4,34 +4,43 @@
 
     <resultMap id="KeywordMap" type="com.doubledowninteractive.news.keyword.domain.Keyword">
         <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
         <result property="word" column="word"/>
         <result property="enabled" column="enabled"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <select id="findAll" resultMap="KeywordMap">
-        SELECT * FROM keywords ORDER BY id DESC
+    <select id="findAll" parameterType="java.lang.Long" resultMap="KeywordMap">
+        SELECT * FROM keywords
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
     </select>
 
-    <select id="findAllEnabled" resultMap="KeywordMap">
-        SELECT * FROM keywords WHERE enabled = 1 ORDER BY id ASC
+    <select id="findAllEnabled" parameterType="java.lang.Long" resultMap="KeywordMap">
+        SELECT * FROM keywords
+        WHERE user_id = #{userId} AND enabled = 1
+        ORDER BY id ASC
     </select>
 
-    <!-- 🔹 중복 확인 -->
-    <select id="findByWord" parameterType="string" resultMap="KeywordMap">
-        SELECT * FROM keywords WHERE word = #{word}
+    <select id="findByWord"  parameterType="com.doubledowninteractive.news.keyword.dto.KeywordDto" resultMap="KeywordMap">
+        SELECT * FROM keywords
+        WHERE user_id = #{userId} AND word = #{word}
+            LIMIT 1
     </select>
 
-    <!-- 🔹 일반 INSERT -->
-    <insert id="insert">
-        INSERT INTO keywords(word, enabled) VALUES(#{word}, 1)
+    <insert id="insert"  parameterType="com.doubledowninteractive.news.keyword.dto.KeywordDto">
+        INSERT INTO keywords (user_id, word, enabled)
+        VALUES (#{userId}, #{word}, 1)
     </insert>
 
-    <update id="updateEnabled">
-        UPDATE keywords SET enabled = #{enabled} WHERE id = #{id}
+    <update id="updateEnabled"  parameterType="com.doubledowninteractive.news.keyword.dto.KeywordDto">
+        UPDATE keywords
+        SET enabled = #{enabled}
+        WHERE id = #{id} AND user_id = #{userId}
     </update>
 
-    <delete id="deleteById">
-        DELETE FROM keywords WHERE id = #{id}
+    <delete id="deleteById" parameterType="com.doubledowninteractive.news.keyword.dto.KeywordDto">
+        DELETE FROM keywords
+        WHERE id = #{id} AND user_id = #{userId}
     </delete>
 </mapper>

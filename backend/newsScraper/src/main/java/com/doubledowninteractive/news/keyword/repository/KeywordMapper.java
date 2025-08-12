@@ -8,15 +8,15 @@ import java.util.List;
 
 @Mapper
 public interface KeywordMapper {
-    List<Keyword> findAll();
-    List<Keyword> findAllEnabled();
+    List<Keyword> findAll(@Param("userId") Long userId);
+    List<Keyword> findAllEnabled(@Param("userId") Long userId);
 
     // 🔹 사전 중복 확인용
-    Keyword findByWord(@Param("word") String word);
+    Keyword findByWord(@Param("userId") Long userId, @Param("word") String word);
 
     // 🔹 일반 INSERT (IGNORE 아님)
-    int insert(@Param("word") String word);
+    int insert(@Param("userId") Long userId, @Param("word") String word);
 
-    int updateEnabled(@Param("id") Long id, @Param("enabled") boolean enabled);
-    int deleteById(@Param("id") Long id);
+    int updateEnabled(@Param("userId") Long userId, @Param("id") Long id, @Param("enabled") boolean enabled);
+    int deleteById(@Param("userId") Long userId, @Param("id") Long id);
 }

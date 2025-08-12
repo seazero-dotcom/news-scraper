@@ -1,7 +1,7 @@
-// backend/src/main/java/com/doubledowninteractive/news/security/SecurityConfig.java
 package com.doubledowninteractive.news.security;
 
 import com.doubledowninteractive.news.security.jwt.JwtTokenProvider;
+import com.doubledowninteractive.news.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,13 +34,17 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final com.doubledowninteractive.news.security.jwt.JwtAuthFilter jwtAuthFilter;
-
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.doubledowninteractive.news.user.service.UserService userService;
+
 
     @Value("${app.frontend.base-url:http://localhost:5173}")
     private String frontendBaseUrl;
 
-    /* ===================== 1) API 체인: /api/**  ===================== */
+    /** ===================== 1) API 체인: JWT 인증 =====================
+     * - /api/** 경로는 JWT 인증을 요구
+     * - 공개된 API는 /api/articles/** (목록/조회)
+     */
     @Bean
     @Order(1)
     SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
@@ -50,20 +54,21 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()      // CORS preflight
-                        .requestMatchers("/api/articles/**").permitAll()             // 공개 목록/조회는 그대로
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/articles/**").permitAll()          // 공개 목록/조회
                         .anyRequest().authenticated()
                 )
-                // 미인증 시 401 반환(브라우저가 구글로 302 리다이렉트하지 않게)
+                // 미인증 시 401 (브라우저가 구글 로그인으로 튕기지 않도록)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                // JWT 인증 필터 (여기서만 동작하면 충분)
+                // JWT 필터 연결
                 .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
-
 
         return http.build();
     }
 
-    /* ===================== 2) WEB 체인: OAuth2 로그인 ===================== */
+    /** ===================== 2) WEB 체인: OAuth2 로그인 =====================
+     * - 구글 로그인 성공 시 프론트(/oauth2/success)로 토큰을 갖고 리다이렉트
+     */
     @Bean
     @Order(2)
     SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
@@ -71,21 +76,29 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/favicon.ico", "/default-ui.css",
-                                "/oauth2/**", "/login/**").permitAll()
+                        .requestMatchers(
+                                "/", "/favicon.ico", "/default-ui.css",
+                                "/oauth2/**", "/login/**"
+                        ).permitAll()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(o -> o
-                        // 별도 핸들러 파일 없이, 성공 시 프론트로 토큰 전달 리다이렉트
                         .successHandler((req, res, authentication) -> {
+                            // 1) 구글 프로필에서 식별자/이름/이메일 추출
                             String subject = extractSubject(authentication);
                             String name    = extractName(authentication);
                             String email   = extractEmail(authentication);
                             Collection<String> roles = extractRoleNames(authentication);
 
-                            // JwtTokenProvider 시그니처에 맞춰 발급
-                            String token = jwtTokenProvider.createToken(subject, name, email, roles);
+                            Long userId = null;
+                            if (email != null) {
+                                userId = userService.findOrCreate(email, name);
+                            }
 
+                            // 2) JWT 발급
+                            String token = jwtTokenProvider.createToken(subject, name, email, roles, userId);
+
+                            // 3) 프론트로 리다이렉트 (토큰, 돌아갈 경로 포함)
                             String redirect = req.getParameter("redirect");
                             if (redirect == null || redirect.isBlank()) redirect = "/settings";
 
@@ -99,25 +112,33 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /* ===================== CORS ===================== */
+    /** ===================== CORS =====================
+     * - 프론트 개발 서버(5173)에서 오는 요청 허용
+     */
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOriginPatterns(List.of("http://localhost:5173","http://127.0.0.1:5173"));
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH")); // ✅ PATCH 추가
+        cfg.setAllowedOriginPatterns(List.of(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+        ));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", cfg);
         return src;
     }
 
-
-    /* ===================== 내부 유틸/필터 ===================== */
-
+    /**   ===================== OAuth2 사용자 정보 추출 =====================
+       - extractSubject: 토큰의 주인( subject )으로 쓸 값. email > sub > name 순
+       - extractName   : 사용자 이름
+       - extractEmail  : 사용자 이메일
+       - extractRoleNames: 권한(없으면 ROLE_USER 하나 부여)
+     */
 
     private String extractSubject(Authentication authentication) {
-        // 선호 순서: email > sub > name > principal.toString()
         String email = extractEmail(authentication);
         if (email != null && !email.isBlank()) return email;
 
@@ -167,9 +188,7 @@ public class SecurityConfig {
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         List<String> roles = new ArrayList<>();
         if (auths != null) {
-            for (GrantedAuthority ga : auths) {
-                roles.add(ga.getAuthority());
-            }
+            for (GrantedAuthority ga : auths) roles.add(ga.getAuthority());
         }
         if (roles.isEmpty()) roles.add("ROLE_USER");
         return roles;

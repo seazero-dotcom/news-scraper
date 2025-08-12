@@ -6,8 +6,10 @@ import com.doubledowninteractive.news.keyword.dto.CreateKeywordRequest;
 import com.doubledowninteractive.news.keyword.dto.KeywordDto;
 import com.doubledowninteractive.news.keyword.dto.ToggleKeywordRequest;
 import com.doubledowninteractive.news.keyword.service.KeywordService;
+import com.doubledowninteractive.news.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -20,31 +22,41 @@ import java.util.Map;
 public class KeywordController {
 
     private final KeywordService keywordService;
+    private final UserService userService;
 
     @GetMapping
-    public ApiResponse<List<KeywordDto>> list() {
-        List<Keyword> rows = keywordService.findAll();
+    public ApiResponse<List<KeywordDto>> list(Authentication authentication) {
+        long userId = userService.currentUserId(authentication);
+        List<Keyword> rows = keywordService.findAllByUser(userId);
         List<KeywordDto> out = new ArrayList<>(rows.size());
         for (Keyword k : rows) out.add(KeywordDto.of(k));
         return ApiResponse.ok(out, Map.of("count", out.size()));
     }
 
     @PostMapping
-    public ApiResponse<?> add(@Valid @RequestBody CreateKeywordRequest req) {
-        keywordService.add(req.getWord());
+    public ApiResponse<?> add(Authentication authentication,
+                              @Valid @RequestBody CreateKeywordRequest req) {
+        long userId = userService.currentUserId(authentication);
+        // 최초 등록 1회 즉시 수집 수행
+        keywordService.add(userId, req.getWord());
         return ApiResponse.ok(Map.of("created", true));
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<?> toggle(@PathVariable Long id, @Valid @RequestBody ToggleKeywordRequest req) {
-        keywordService.toggle(id, req.getEnabled());
+    public ApiResponse<?> toggle(Authentication authentication,
+                                 @PathVariable Long id,
+                                 @Valid @RequestBody ToggleKeywordRequest req) {
+        long userId = userService.currentUserId(authentication);
+        boolean enabled = Boolean.TRUE.equals(req.getEnabled());
+        keywordService.toggle(userId, id, enabled);
         return ApiResponse.ok(Map.of("updated", true));
     }
 
-
     @DeleteMapping("/{id}")
-    public ApiResponse<?> remove(@PathVariable Long id) {
-        keywordService.remove(id);
+    public ApiResponse<?> remove(Authentication authentication,
+                                 @PathVariable Long id) {
+        long userId = userService.currentUserId(authentication);
+        keywordService.remove(userId, id);
         return ApiResponse.ok(Map.of("deleted", true));
     }
 }

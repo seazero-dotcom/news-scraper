@@ -16,7 +16,7 @@ const auth = useAuth()
 
 onMounted(() => {
   const token = route.query.token
-  const redirect = route.query.redirect || '/settings'
+  const redirect = '/'
   if (token) {
     auth.setToken(token)
     router.replace(redirect)

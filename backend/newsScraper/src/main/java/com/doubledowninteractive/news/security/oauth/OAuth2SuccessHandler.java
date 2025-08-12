@@ -1,7 +1,7 @@
 package com.doubledowninteractive.news.security.oauth;
 
 import com.doubledowninteractive.news.security.jwt.JwtTokenProvider;
-import jakarta.servlet.ServletException;
+import com.doubledowninteractive.news.user.service.UserService;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,13 +21,14 @@ import java.util.Map;
 public class OAuth2SuccessHandler implements org.springframework.security.web.authentication.AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwt;
+    private final UserService userService;
 
     @Value("${app.frontend.base-url:http://localhost:5173}")
     private String frontBase;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication auth)
-            throws IOException, ServletException {
+            throws IOException {
 
         String email = null, name = null, sub = null;
 
@@ -44,7 +45,12 @@ public class OAuth2SuccessHandler implements org.springframework.security.web.au
             sub  = String.valueOf(a.getOrDefault("sub", email));
         }
 
-        String token = jwt.createToken(sub != null ? sub : email, name, email, List.of("ROLE_USER"));
+        Long userId = null;
+        if (email != null) {
+            userId = userService.findOrCreate(email, name);
+        }
+
+        String token = jwt.createToken(sub != null ? sub : email, name, email, List.of("ROLE_USER"), userId);
         String redirect = frontBase + "/oauth2/success?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         res.sendRedirect(redirect);
     }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class Keyword {
+    private Long userId;
     private Long id;
     private String word;
     private Boolean enabled;

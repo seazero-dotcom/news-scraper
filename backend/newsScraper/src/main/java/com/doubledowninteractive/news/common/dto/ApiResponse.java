@@ -28,5 +28,9 @@ public class ApiResponse<T> {
         return new ApiResponse<>(false, null, null, new ErrorBody(code, message, status));
     }
 
+    public static ApiResponse<?> unauthorized(String s) {
+        return error("UNAUTHORIZED", s, 401); // 인증 실패 응답
+    }
+
     public record ErrorBody(String code, String message, Integer status) {} // 에러 정보 DTO
 }

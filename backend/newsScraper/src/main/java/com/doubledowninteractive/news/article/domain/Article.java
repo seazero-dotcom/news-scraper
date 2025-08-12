@@ -19,23 +19,19 @@ import java.time.LocalDateTime;
 public class Article {
     private Long id;
 
-    private Long sourceId;     // FK: sources.id
-    private Long keywordId;    // FK: keywords.id (nullable, 없을 수 있음)
+    private Long sourceId;
+    private Long keywordId;
 
     private String title;
     private String url;
-    private String urlHash;    // UNIQUE 인덱스 권장
+    private String urlHash;
 
-    private String lang;       // 예: "ko", "en"
+    private String lang;
 
-    // 🔽 추가
-    private String summary;   // NULL 가능
-    private String imageUrl;  // NULL 가능
+    private String summary;
+    private String imageUrl;
 
     private LocalDateTime publishedAt; // 기사 게시 시각(없으면 null)
-    private LocalDateTime fetchedAt;   // 우리 시스템이 수집한 시각
+    private LocalDateTime fetchedAt;   // 수집한 시각
 
-    // 선택(스키마에 있으면 매핑): 생성/수정 시각
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

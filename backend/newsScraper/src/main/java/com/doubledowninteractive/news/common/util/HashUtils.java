@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
- * 같은 기사를 여러 소스/리다이렉트로 만나도 정규화된 URL을 SHA-256으로 해시해서 articles.url_hash에 유니크 인덱스를 걸면 중복 저장을 막을 수 있어.
- *
+    * 유틸리티 클래스: 문자열을 SHA-256 해시로 변환하는 메서드 제공.
+    *
  */
 public class HashUtils {
     public static String sha256(String s) {

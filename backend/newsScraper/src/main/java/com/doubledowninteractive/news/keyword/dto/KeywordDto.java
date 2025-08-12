@@ -7,12 +7,13 @@ import lombok.NoArgsConstructor;
 
 @Data @NoArgsConstructor @AllArgsConstructor
 public class KeywordDto {
+    private Long userId;
     private Long id;
     private String word;
     private Boolean enabled;
 
     public static KeywordDto of(Keyword k) {
         if (k == null) return null;
-        return new KeywordDto(k.getId(), k.getWord(), k.getEnabled());
+        return new KeywordDto(k.getUserId(), k.getId(), k.getWord(), k.getEnabled());
     }
 }

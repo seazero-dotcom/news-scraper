@@ -12,12 +12,11 @@ import static com.doubledowninteractive.news.common.util.JsonUtils.getString;
 @Component("AGGREGATOR_RSS_SITE")
 public class AggregatorRssSiteCollector implements CollectorService {
 
-    private final AggregatorRssClient rss = new AggregatorRssClient(); // 오버로드(fetch(query, sourceId, site)) 버전
+    private final AggregatorRssClient rss = new AggregatorRssClient();
 
     @Override
     public List<Article> collect(Source src, String keyword) {
-        // ✅ params가 String(JSON)이든 Map이든 안전하게 꺼냄
-        String site = getString(src.getParams(), "site"); // 예: "news.naver.com" / "v.daum.net"
+        String site = getString(src.getParams(), "site"); // "news.naver.com" / "v.daum.net"
         return rss.fetch(keyword, src.getId(), site);
     }
 }

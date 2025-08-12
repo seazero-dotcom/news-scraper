@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data @NoArgsConstructor @AllArgsConstructor
 public class SourceDto {
+    private Long userId;
     private Long id;
     private String code;
     private String name;
@@ -15,6 +16,6 @@ public class SourceDto {
 
     public static SourceDto of(Source s) {
         if (s == null) return null;
-        return new SourceDto(s.getId(), s.getCode(), s.getName(), s.getBaseUrl(), s.getEnabled());
+        return new SourceDto(s.getUserId(), s.getId(), s.getCode(), s.getName(), s.getBaseUrl(), s.getEnabled());
     }
 }

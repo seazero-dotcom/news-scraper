@@ -12,7 +12,6 @@ public class CrawlExecutorConfig {
 
     @Bean(name = "crawlExecutor")
     public Executor crawlExecutor() {
-        // 🔢 필요하면 숫자만 바꾸면 됩니다
         int maxConcurrency = 6;
         int queue = 100;
 

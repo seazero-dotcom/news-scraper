@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.doubledowninteractive.news.article.repository.ArticleMapper">
+    <!-- 엔티티 매핑 -->
     <resultMap id="ArticleMap" type="com.doubledowninteractive.news.article.domain.Article">
         <id property="id" column="id"/>
-        <result property="sourceId" column="source_id"/>
-        <result property="keywordId" column="keyword_id"/>
-        <result property="url" column="url"/>
-        <result property="urlHash" column="url_hash"/>
-        <result property="title" column="title"/>
-        <result property="summary" column="summary"/>
-        <result property="imageUrl" column="image_url"/>
+        <result property="sourceId"   column="source_id"/>
+        <result property="keywordId"  column="keyword_id"/>
+        <result property="url"        column="url"/>
+        <result property="urlHash"    column="url_hash"/>
+        <result property="title"      column="title"/>
+        <result property="summary"    column="summary"/>
+        <result property="imageUrl"   column="image_url"/>
         <result property="publishedAt" column="published_at"/>
-        <result property="fetchedAt" column="fetched_at"/>
-        <result property="lang" column="lang"/>
+        <result property="fetchedAt"   column="fetched_at"/>
+        <result property="lang"       column="lang"/>
     </resultMap>
 
-    <insert id="upsert">
+    <insert id="insertIgnore">
         INSERT INTO articles
         (source_id, keyword_id, url, url_hash, title, summary, image_url, published_at, fetched_at, lang)
         VALUES
@@ -30,116 +31,43 @@
                                  fetched_at   = VALUES(fetched_at)
     </insert>
 
-
-    <insert id="insertIgnore">
-        INSERT INTO articles
-        (source_id, keyword_id, url, url_hash, title, summary, image_url, published_at, fetched_at, lang)
-        VALUES
-        (#{sourceId}, #{keywordId}, #{url}, #{urlHash}, #{title}, #{summary}, #{imageUrl}, #{publishedAt}, #{fetchedAt}, #{lang})
-        ON DUPLICATE KEY UPDATE
-        title        = VALUES(title),
-        summary      = VALUES(summary),
-        image_url    = VALUES(image_url),   <!-- ✅ 컬럼명 그대로 -->
-        lang         = VALUES(lang),
-        published_at = VALUES(published_at),
-        keyword_id   = VALUES(keyword_id),
-        fetched_at   = VALUES(fetched_at)
-    </insert>
-
-
-
-    <select id="findById" resultMap="ArticleMap">
-        SELECT * FROM articles WHERE id = #{id}
-    </select>
-
-    <!-- backend/src/main/resources/mybatis/article/ArticleMapper.xml -->
-    <select id="findPage" resultType="com.doubledowninteractive.news.article.dto.ArticleListItemDto">
-        SELECT
-        a.id,
-        a.source_id   AS sourceId,
-        s.code        AS sourceCode,
-        s.name        AS sourceName,
-        a.keyword_id  AS keywordId,
-        k.word        AS keywordWord,           <!-- ✅ -->
-        a.title,
-        a.url,
-        a.image_url   AS imageUrl,
-        a.lang,
-        a.published_at AS publishedAt,
-        a.fetched_at   AS fetchedAt            <!-- ✅ -->
+    <select id="count" resultType="long" parameterType="com.doubledowninteractive.news.article.dto.ArticleListSearchDto">
+        SELECT COUNT(*)
         FROM articles a
-        LEFT JOIN sources  s ON s.id = a.source_id
-        LEFT JOIN keywords k ON k.id = a.keyword_id
+        INNER JOIN sources  s ON s.id = a.source_id
+        <if test="userId != 0"> and s.user_id = #{userId} </if>
+        INNER JOIN keywords k ON k.id = a.keyword_id
+        <if test="userId != 0"> and k.user_id = #{userId} </if>
         <where>
             <if test="q != null and q != ''">
-                (a.title LIKE CONCAT('%', #{q}, '%') OR a.url LIKE CONCAT('%', #{q}, '%'))
+                AND (a.title LIKE CONCAT('%', #{q}, '%') OR a.url LIKE CONCAT('%', #{q}, '%'))
             </if>
             <if test="sourceId != null"> AND a.source_id = #{sourceId} </if>
-            <if test="from != null"> AND a.published_at &gt;= #{from} </if>
-            <if test="to != null"> AND a.published_at &lt;= #{to} </if>
-        </where>
-        ORDER BY COALESCE(a.published_at, a.fetched_at) DESC
-        LIMIT #{size} OFFSET #{offset}
-    </select>
-
-    <select id="countBySourceId" parameterType="long" resultType="int">
-        SELECT COUNT(*) FROM articles WHERE source_id = #{sourceId}
-    </select>
-
-    <delete id="deleteBySourceId" parameterType="long">
-        DELETE FROM articles WHERE source_id = #{sourceId}
-    </delete>
-
-    <!-- ArticleMapper.xml -->
-    <select id="count" resultType="long">
-        SELECT COUNT(*) FROM articles
-        <where>
-            <if test="q != null and q != ''">
-                AND (title LIKE CONCAT('%', #{q}, '%') OR url LIKE CONCAT('%', #{q}, '%'))
-            </if>
-            <if test="sourceId != null"> AND source_id = #{sourceId} </if>
-            <if test="keywordId != null"> AND keyword_id = #{keywordId} </if>
-            <if test="from != null"> AND DATE(COALESCE(published_at, fetched_at)) &gt;= #{from} </if>
-            <if test="to != null">   AND DATE(COALESCE(published_at, fetched_at)) &lt;= #{to}   </if>
+            <if test="keywordId != null"> AND a.keyword_id = #{keywordId} </if>
+            <if test="from != null"> AND DATE(COALESCE(a.published_at, a.fetched_at)) &gt;= #{from} </if>
+            <if test="to != null">   AND DATE(COALESCE(a.published_at, a.fetched_at)) &lt;= #{to}   </if>
         </where>
     </select>
 
-    <select id="find" resultMap="ArticleMap">
-        SELECT * FROM articles
-        <where>
-            <if test="q != null and q != ''">
-                AND (title LIKE CONCAT('%', #{q}, '%') OR url LIKE CONCAT('%', #{q}, '%'))
-            </if>
-            <if test="sourceId != null"> AND source_id = #{sourceId} </if>
-            <if test="keywordId != null"> AND keyword_id = #{keywordId} </if>
-            <if test="from != null"> AND DATE(COALESCE(published_at, fetched_at)) &gt;= #{from} </if>
-            <if test="to != null">   AND DATE(COALESCE(published_at, fetched_at)) &lt;= #{to}   </if>
-        </where>
-        ORDER BY
-        <choose>
-            <when test="sort == 'oldest'"> COALESCE(published_at, fetched_at) ASC </when>
-            <otherwise>                    COALESCE(published_at, fetched_at) DESC </otherwise>
-        </choose>
-        LIMIT #{size} OFFSET #{offset}
-    </select>
-    <!-- count는 기존 것 사용 -->
-
-    <select id="findList" resultType="com.doubledowninteractive.news.article.dto.ArticleListItemDto">
+    <select id="findList" resultType="com.doubledowninteractive.news.article.dto.ArticleListItemDto" parameterType="com.doubledowninteractive.news.article.dto.ArticleListSearchDto">
         SELECT
-        a.id,
-        a.source_id   AS sourceId,
-        s.code        AS sourceCode,
-        s.name        AS sourceName,
-        a.keyword_id  AS keywordId,
-        k.word        AS keywordWord,
-        a.title,
-        a.url,
-        a.lang,
-        a.published_at AS publishedAt,
-        a.fetched_at   AS fetchedAt
+        a.id          AS id,
+        a.source_id     AS sourceId,
+        s.code          AS sourceCode,
+        s.name          AS sourceName,
+        a.keyword_id    AS keywordId,
+        k.word          AS keywordWord,
+        a.title        AS title,
+        a.url         AS url,
+        a.image_url     AS imageUrl,
+        a.lang         AS lang,
+        a.published_at  AS publishedAt,
+        a.fetched_at    AS fetchedAt
         FROM articles a
-        LEFT JOIN sources  s ON s.id = a.source_id
-        LEFT JOIN keywords k ON k.id = a.keyword_id
+        INNER JOIN sources  s ON s.id = a.source_id
+             <if test="userId != 0"> and s.user_id = #{userId} </if>
+        INNER JOIN keywords k ON k.id = a.keyword_id
+             <if test="userId != 0"> and k.user_id = #{userId} </if>
         <where>
             <if test="q != null and q != ''">
                 AND (a.title LIKE CONCAT('%', #{q}, '%') OR a.url LIKE CONCAT('%', #{q}, '%'))
@@ -156,5 +84,14 @@
         </choose>
         LIMIT #{size} OFFSET #{offset}
     </select>
+
+    <!-- 소스 연관 카운트 / 삭제 -->
+    <select id="countBySourceId" parameterType="java.lang.Long" resultType="int">
+        SELECT COUNT(*) FROM articles WHERE source_id = #{sourceId}
+    </select>
+
+    <delete id="deleteBySourceId" parameterType="java.lang.Long">
+        DELETE FROM articles WHERE source_id = #{sourceId}
+    </delete>
 
 </mapper>

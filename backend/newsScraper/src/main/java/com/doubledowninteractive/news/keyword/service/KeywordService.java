@@ -1,50 +1,60 @@
 package com.doubledowninteractive.news.keyword.service;
 
 import com.doubledowninteractive.news.common.exception.DuplicateException;
+import com.doubledowninteractive.news.crawl.scheduler.CrawlScheduler;
 import com.doubledowninteractive.news.keyword.domain.Keyword;
 import com.doubledowninteractive.news.keyword.repository.KeywordMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class KeywordService {
+
     private final KeywordMapper mapper;
+    private final CrawlScheduler crawlScheduler;
 
-    public List<Keyword> findAll() { return mapper.findAll(); }
-    public List<Keyword> findAllEnabled() { return mapper.findAllEnabled(); }
-
-    @Transactional
-    public void add(String word) {
-        String normalized = word == null ? "" : word.trim();
-        if (normalized.isEmpty()) {
-            // 빈 문자열에 대한 처리: 여기선 무시하거나, BadRequestException을 던져도 됨
-            throw new IllegalArgumentException("키워드가 비어 있습니다.");
-        }
-
-        // 1) 사전 확인 (UX용): 이미 있다면 바로 안내
-        if (mapper.findByWord(normalized) != null) {
-            throw new DuplicateException("이미 등록된 키워드입니다: " + normalized);
-        }
-
-        // 2) 경쟁 조건 대비: 실제 INSERT 시 중복키 예외를 잡아 안내
-        try {
-            mapper.insert(normalized);
-        } catch (DuplicateKeyException e) {
-            throw new DuplicateException("이미 등록된 키워드입니다: " + normalized);
-        }
+    public List<Keyword> findAllByUser(Long userId) {
+        return mapper.findAll(userId);
+    }
+    public List<Keyword> findAllEnabledByUser(Long userId) {
+        return mapper.findAllEnabled(userId);
     }
 
     @Transactional
-    public void toggle(Long id, boolean enabled) {
-        mapper.updateEnabled(id, enabled);
+    public void add(Long userId, String word) {
+        String w = word == null ? "" : word.trim();
+        if (w.isEmpty()) throw new IllegalArgumentException("키워드를 입력해 주세요.");
+
+        if (mapper.findByWord(userId, w) != null) {
+            throw new DuplicateException("이미 등록된 키워드입니다.");
+        }
+
+        mapper.insert(userId, w);
+
+        Keyword k = mapper.findByWord(userId, w);
+        if (k == null) return;
+
+        // 트랜잭션 커밋 후 실행
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() {
+                crawlScheduler.runOnceForNewKeyword(userId, k.getWord(), k.getId());
+            }
+        });
     }
 
     @Transactional
-    public void remove(Long id) {
-        mapper.deleteById(id);
+    public void toggle(Long userId, Long id, boolean enabled) {
+        mapper.updateEnabled(userId, id, enabled);
+    }
+
+    @Transactional
+    public void remove(Long userId, Long id) {
+        mapper.deleteById(userId, id);
     }
 }

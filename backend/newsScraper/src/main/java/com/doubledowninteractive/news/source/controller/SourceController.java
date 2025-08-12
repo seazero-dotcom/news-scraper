@@ -7,8 +7,10 @@ import com.doubledowninteractive.news.source.dto.SourceDto;
 import com.doubledowninteractive.news.source.dto.ToggleSourceRequest;
 import com.doubledowninteractive.news.source.dto.UpdateSourceRequest;
 import com.doubledowninteractive.news.source.service.SourceService;
+import com.doubledowninteractive.news.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -20,53 +22,53 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SourceController {
 
-    private static final String ONLY_COLLECTOR = "AGGREGATOR_RSS_SITE";
-
     private final SourceService service;
+    private final UserService userService;
 
     @GetMapping
-    public ApiResponse<List<SourceDto>> list() {
-        List<Source> rows = service.findAll();
+    public ApiResponse<List<SourceDto>> list(Authentication authentication) {
+        long userId = userService.currentUserId(authentication);
+        List<Source> rows = service.findAll(userId);
         List<SourceDto> out = new ArrayList<>(rows.size());
         for (Source s : rows) out.add(SourceDto.of(s));
         return ApiResponse.ok(out, Map.of("count", out.size()));
     }
 
     @PostMapping
-    public ApiResponse<?> add(@Valid @RequestBody CreateSourceRequest req) {
-        // collector는 단일 방식만 허용
-        String collector = ONLY_COLLECTOR;
-
+    public ApiResponse<?> add(Authentication authentication, @Valid @RequestBody CreateSourceRequest req) {
+        long userId = userService.currentUserId(authentication);
         // params.site 필수 체크
-        Map<String, Object> params = req.getParams();
+        var params = req.getParams();
         if (params == null || !params.containsKey("site")
                 || String.valueOf(params.get("site")).trim().isEmpty()) {
             throw new IllegalArgumentException("params.site is required (e.g. news.naver.com)");
         }
 
-        service.add(
+        Boolean enabled = req.getEnabled();
+
+        service.add(userId,
                 req.getCode(),
                 req.getName(),
                 req.getBaseUrl(),
-                collector,
+                enabled,
                 params
         );
         return ApiResponse.ok(Map.of("created", true));
     }
 
     @PatchMapping("/{id}/enabled")
-    public ApiResponse<?> toggle(@PathVariable Long id,
+    public ApiResponse<?> toggle(Authentication authentication, @PathVariable Long id,
                                  @Valid @RequestBody ToggleSourceRequest req) {
-        service.toggle(id, Boolean.TRUE.equals(req.getEnabled()));
+        long userId = userService.currentUserId(authentication);
+        service.toggle(userId, id, Boolean.TRUE.equals(req.getEnabled()));
         return ApiResponse.ok(Map.of("updated", true));
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id,
+    public ApiResponse<?> update(Authentication authentication, @PathVariable Long id,
                                  @Valid @RequestBody UpdateSourceRequest req) {
-        // collector는 서비스에서 AGGREGATOR_RSS_SITE로 강제됨.
-        // params가 온 경우 site 필수 검증(서비스에서도 한 번 더 검증)
-        Map<String, Object> params = req.getParams();
+        long userId = userService.currentUserId(authentication);
+        var params = req.getParams();
         if (params != null) {
             Object site = params.get("site");
             if (site == null || String.valueOf(site).trim().isEmpty()) {
@@ -75,20 +77,22 @@ public class SourceController {
         }
 
         service.update(
+                userId,
                 id,
                 req.getName(),
                 req.getBaseUrl(),
-                req.getEnabled(),     // ✅ enabled도 함께 반영
-                req.getCollector(),   // 무시되더라도 시그니처 맞춤 (서비스에서 강제)
+                req.getEnabled(),
+                req.getCollector(),
                 params
         );
         return ApiResponse.ok(Map.of("updated", true));
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<?> remove(@PathVariable Long id,
+    public ApiResponse<?> remove(Authentication authentication, @PathVariable Long id,
                                  @RequestParam(defaultValue = "false") boolean force) {
-        service.remove(id, force);
+        long userId = userService.currentUserId(authentication);
+        service.remove(userId, id, force);
         return ApiResponse.ok(Map.of("deleted", true, "force", force));
     }
 }

@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-// backend/.../crawl/impl/AggregatorRssClient.java
 @Slf4j
 class AggregatorRssClient {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
@@ -26,15 +25,11 @@ class AggregatorRssClient {
     private final OkHttpClient http = new OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build();
 
-    private static final DateTimeFormatter RSS =
-            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
 
-    // ✅ 기존 전체 검색(ALL) 유지
     List<Article> fetch(String query, Long sourceId) {
         return fetch(query, sourceId, null);
     }
 
-    // ✅ site 도메인 필터가 추가된 버전 (예: news.naver.com, v.daum.net)
     List<Article> fetch(String query, Long sourceId, String siteDomain) {
         String q = (siteDomain != null && !siteDomain.isBlank())
                 ? ("site:" + siteDomain + " " + query)
@@ -42,6 +37,7 @@ class AggregatorRssClient {
 
         String url = "https://news.google.com/rss/search?q=" +
                 java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8) +
+                "%20site%3A" + (siteDomain != null ? siteDomain : "") +
                 "&hl=ko&gl=KR&ceid=KR:ko";
 
         Request req = new Request.Builder().url(url).get().build();

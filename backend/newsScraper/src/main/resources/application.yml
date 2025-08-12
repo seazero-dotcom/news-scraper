@@ -24,6 +24,10 @@ spring:
           google:
             issuer-uri: https://accounts.google.com
 
+  jackson:
+    # LocalDateTime 자체는 타임존이 없지만, Date/ZonedDateTime 직렬화에 적용됨
+    time-zone: Asia/Seoul
+
 mybatis:
   mapper-locations: classpath:mybatis/**/*.xml
   configuration:
@@ -33,13 +37,14 @@ app:
   frontend:
     base-url: http://localhost:5173
   jwt:
+    # 운영 배포 시 반드시 외부 환경변수로 주입
     secret: ${JWT_SECRET:change-this-demo-secret-32bytes-min-change-this-demo-secret}
     expMinutes: 120
 
 logging:
   level:
     root: INFO
-    com.doubledowninteractive.news: DEBUG     # ✅ 우리 패키지 전부 디버그
+    com.doubledowninteractive.news: DEBUG
     org.springframework.web: INFO
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG

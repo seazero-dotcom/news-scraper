@@ -3,6 +3,7 @@ package com.doubledowninteractive.news.article.controller;
 import com.doubledowninteractive.news.article.dto.ArticleListItemDto;
 import com.doubledowninteractive.news.article.service.ArticleService;
 import com.doubledowninteractive.news.common.dto.ApiResponse;
+import com.doubledowninteractive.news.security.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -30,13 +31,17 @@ public class ArticleController {
             @RequestParam(defaultValue = "recent") String sort
     ) {
         int safePage = Math.max(0, page);
-        int safeSize = Math.min(Math.max(1, size), 100);  // ✅ 1~100 사이로 캡
+        int safeSize = Math.min(Math.max(1, size), 100); // 최대 100개로 제한
 
-        long total = articleService.count(q, sourceId, keywordId, from, to);
+        Long userId = AuthUtils.currentUserId(); // JWT에서 꺼낸 내 userId
+        if (userId == null) {
+            userId = 0L; // 인증되지 않은 경우 0으로 처리
+        }
 
-        // ✅ 반드시 safeSize로 호출 (캡이 쿼리에 반영되도록)
+        long total = articleService.count(userId, q, sourceId, keywordId, from, to);
+
         List<ArticleListItemDto> rows = articleService.findForList(
-                q, sourceId, keywordId, from, to, sort, safePage, safeSize
+                userId, q, sourceId, keywordId, from, to, sort, safePage, safeSize
         );
 
         int totalPages = (int) Math.ceil((double) total / safeSize);

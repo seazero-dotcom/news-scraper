@@ -8,30 +8,32 @@ import java.util.List;
 
 @Mapper
 public interface SourceMapper {
-    // 목록/단건
-    List<Source> findAll();
-    Source findById(@Param("id") Long id);
+    List<Source> findAll(@Param("userId") Long userId);
+    Source findById(@Param("userId") Long userId, @Param("id") Long id);
 
-    // enabled=1 조건까지 포함된 조회 (스케줄러에서 사용)
+
     Source findByCode(@Param("code") String code);
 
-    // 🔹 추가: 스케줄러용
-    List<Source> findAllEnabled();
 
-    // CUD
-    int insert(@Param("code") String code,
+    List<Source> findAllEnabled(@Param("userId") Long userId);
+
+
+    int insert(@Param("userId") Long userId,
+               @Param("code") String code,
+               @Param("name") String name,
+               @Param("baseUrl") String baseUrl,
+               @Param("collector") String collector,
+               @Param("params") String paramsJson,
+               @Param("enabled") boolean enabled);
+
+    int updateEnabled(@Param("userId") Long userId, @Param("id") Long id, @Param("enabled") boolean enabled);
+
+    int update(@Param("userId") Long userId,
+               @Param("id") Long id,
                @Param("name") String name,
                @Param("baseUrl") String baseUrl,
                @Param("collector") String collector,
                @Param("params") String paramsJson);
 
-    int updateEnabled(@Param("id") Long id, @Param("enabled") boolean enabled);
-
-    int update(@Param("id") Long id,
-               @Param("name") String name,
-               @Param("baseUrl") String baseUrl,
-               @Param("collector") String collector,
-               @Param("params") String paramsJson);
-
-    int deleteById(@Param("id") Long id);
+    int deleteById(@Param("userId") Long userId, @Param("id") Long id);
 }

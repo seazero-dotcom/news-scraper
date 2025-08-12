@@ -70,8 +70,11 @@ async function loadArticles({ reset = false } = {}) {
     const { data } = await api.get('/api/articles', {
       params: { q: q.value, page: page.value, size: size.value, sort: 'recent' }
     })
+    console.log(data)
     const list = normalizeList(data)
     const meta = metaOf(data)
+    console.log(list)
+    console.log(meta)
 
     if (reset) items.value = list
     else items.value = items.value.concat(list)
@@ -140,8 +143,8 @@ select, input { padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; }
 .thumb { width:100%; height:168px; object-fit:cover; border-radius:10px; margin-bottom:8px; background:#f3f4f6; }
 .times {
   display: flex;
-  flex-direction: column; /* ✅ 세로 정렬 */
-  gap: 2px;               /* 줄 간격 */
+  flex-direction: column;
+  gap: 2px;
   color: #6b7280;
   font-size: 12px;
 }

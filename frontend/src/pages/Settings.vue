@@ -40,7 +40,6 @@ async function deleteKeyword(k) {
   await loadKeywords();
 }
 
-/* -------------------- 소스 (AGGREGATOR_RSS_SITE 전용) -------------------- */
 const srcs = ref([]);
 
 // 생성 폼 상태 (site만 받음)
@@ -73,8 +72,8 @@ async function addSource() {
       name,
       baseUrl: baseUrl || null,
       enabled: !!form.value.enabled,
-      collector: 'AGGREGATOR_RSS_SITE',    // ✅ 고정
-      params: { site }                     // ✅ 필수
+      collector: 'AGGREGATOR_RSS_SITE',
+      params: { site }
     };
 
     await api.post('/api/sources', payload);
@@ -92,7 +91,6 @@ async function toggleSource(s) {
   await loadSources();
 }
 
-// ✏️ 모달 없이 prompt로 간단 수정 (name/baseUrl/site/사용여부까지)
 async function updateSource(s) {
   const name = prompt('이름 수정', s.name || '');
   if (name === null) return;
@@ -100,7 +98,6 @@ async function updateSource(s) {
   const baseUrl = prompt('기본 URL 수정', s.baseUrl || '');
   if (baseUrl === null) return;
 
-  // 현재 params에서 site 읽어오기 (문자열일 수도 있으니 파싱)
   let p = s.params;
   if (typeof p === 'string') {
     try { p = JSON.parse(p); } catch { p = {}; }
@@ -120,15 +117,14 @@ async function updateSource(s) {
     name: name.trim(),
     baseUrl: (baseUrl || '').trim() || null,
     enabled,
-    collector: 'AGGREGATOR_RSS_SITE',   // ✅ 고정
-    params: { site: site.trim() }       // ✅ 필수
+    collector: 'AGGREGATOR_RSS_SITE',
+    params: { site: site.trim() }
   };
 
   await api.patch(`/api/sources/${s.id}`, payload);
   await loadSources();
 }
 
-// ✅ 삭제: 409 발생 시 force=true로 재시도해 연관 기사까지 함께 삭제
 async function deleteSource(s) {
   if (!confirm(`삭제할까요? ${s.name} (연관 기사 있으면 실패)`)) return;
   try {
@@ -185,7 +181,6 @@ onMounted(async () => {
       </table>
     </div>
 
-    <!-- 소스 탭 (AGGREGATOR_RSS_SITE 전용) -->
     <div v-else>
       <!-- 생성 폼 -->
       <div class="mb12 src-form">
