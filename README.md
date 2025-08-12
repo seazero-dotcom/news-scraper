@@ -144,3 +144,27 @@ CREATE TABLE `articles` (
 ) ENGINE=InnoDB AUTO_INCREMENT=8497 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 ```
+
+---
+
+### 기초 데이터
+
+```
+-- 1. 사용자 생성
+INSERT INTO users (email, name)
+VALUES ('admin@example.com', '관리자');
+
+-- 2. 뉴스 소스 생성 (user_id=1)
+INSERT INTO sources (code, name, base_url, enabled, collector, params, user_id)
+VALUES ('HK', '한국경제', 'https://www.hankyung.com/', 1, 'AGGREGATOR_RSS_SITE', JSON_OBJECT('site', 'www.hankyung.com'), 1);
+
+-- 2. 키워드 생성 (user_id=1)
+INSERT INTO keywords (word, enabled, user_id)
+VALUES ('부동산', 1, 1);
+
+-- 3. 기사 데이터 생성 (source_id=1, keyword_id=1)
+INSERT INTO articles (source_id, keyword_id, url, url_hash, title, fetched_at)
+VALUES (1, 1, 'https://www.hankyung.com/example1', 'hash_example_1', '부동산 시장 분석', NOW());
+
+```
+
