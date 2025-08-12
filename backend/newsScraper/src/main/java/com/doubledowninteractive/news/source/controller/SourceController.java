@@ -37,7 +37,6 @@ public class SourceController {
     @PostMapping
     public ApiResponse<?> add(Authentication authentication, @Valid @RequestBody CreateSourceRequest req) {
         long userId = userService.currentUserId(authentication);
-        // params.site 필수 체크
         var params = req.getParams();
         if (params == null || !params.containsKey("site")
                 || String.valueOf(params.get("site")).trim().isEmpty()) {

@@ -11,10 +11,8 @@ public interface KeywordMapper {
     List<Keyword> findAll(@Param("userId") Long userId);
     List<Keyword> findAllEnabled(@Param("userId") Long userId);
 
-    // 🔹 사전 중복 확인용
     Keyword findByWord(@Param("userId") Long userId, @Param("word") String word);
 
-    // 🔹 일반 INSERT (IGNORE 아님)
     int insert(@Param("userId") Long userId, @Param("word") String word);
 
     int updateEnabled(@Param("userId") Long userId, @Param("id") Long id, @Param("enabled") boolean enabled);
